@@ -1,0 +1,49 @@
+```{r}
+#return a list int_u=(int[exp(u1)], , , int[exp(uk)])
+int_u<-function(u, z){
+  k<-length(u)
+  int_u<-numeric(k)
+  for (i in 1:k){
+    int_u[i]<-integrate(u[i],z[i],z[i+1])[[1]]
+  }
+  return(int_u)
+}
+#cdf of s_k
+cdf<-function(int_u){
+  cdf=c(0, cumsum(int_u/sum(int_u)))
+}
+
+find_x_star<-function(cdf,int_u,h_p,z,t,h,u){
+  #Inverse CDF Method
+  r<-runif(1)
+  i<-which(r<cumsum(int_u/sum(int_u)))[1]
+  A<-r-cdf[i]
+  C<-sum(int_u)
+  B<-A*C*h_p[i]
+  D<-B+exp(u(z[i]))#########
+  x_star<-t[i]+(log(D)-h[i])/h_p[i]
+  return(x_star)
+}
+#accept x_star if it returns TRUE
+test<-function(x_star,l,u){
+  w<-runif(1)
+  t_1<-exp(l(x_star)-u(x_star))
+  t_2<-exp(h(x_star)-u(x_star))
+  
+  if (w<=t_1){
+    res<-TRUE
+  }
+  else{
+    if (w<=t_2){
+      res<-TRUE
+    }
+    else {
+      res<-FALSE
+    }
+  }
+  return(res)
+}
+
+
+```
+
