@@ -137,5 +137,25 @@ system.time({
     }
 })
 # update step finished here
+
+
+# potential update step updated to include z function
+update_step2 <- function(x_star) {
+    newrow <- c(x_star, h(x_star), d(h, x_star), 0) # the new row will be added
+    pos <- findInterval(x_star, data2[, 1])
+    if (pos == length(data2[, 1])) { # x_star is the largest number
+      newrow[4] <- Inf
+      data2[pos, 4] <<- z(data2[pos, ], newrow)
+    } else if (pos == 0) { # x_star is the smallest number
+        newrow[4] <- z(newrow, data2[pos + 1, ])
+      } else { # x_star is not the smallest or the largest number
+          newrow[4] <- z(newrow, data2[pos + 1, ])
+          data2[pos, 4] <<- z(data2[pos, ], newrow)
+          }
+    data2 <<- rbind(data2, newrow[1:4])
+    #order the data
+    data2 <<- data2[order(data2[, 1]), ]
+    return(data2)
+}
 ```
 
