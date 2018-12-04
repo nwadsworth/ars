@@ -3,11 +3,15 @@ ars <- function(formula, nsamples, min = -Inf, max = Inf, xinit) {
   
   #initialize data matrix
   
-  data2 <- matrix(c(xinit, h(xinit), d(h, xinit), rep(Inf, length(xinit))), ncol = 4)
-  # get z values for data matrix
+  data2 <- matrix(c(xinit, h(xinit), d(h, xinit)), ncol = 3)
+  # get z values for data matrix  
+  zvector <- NULL
+  zvector[1] <- min
   for(i in 1:(length(xinit) - 1)) {
-    data2[i, 4] <- z(data2[i, ], data2[i + 1, ])
+    zvector[i+1] <- z(data2[i, ], data2[i + 1, ])
   }
+  zvector[length(xinit) + 1] <- max
+  
   
 }
 
@@ -17,7 +21,6 @@ Initialization step
 ```{r}
 u <- function(x) {
   i <- findInterval(x, data[, 4]) + 1
-  #if(x > data[i, 4]) i <- i + 1
   return(data[i, 2] + (x - data[i, 1]) * data[i, 3])
 }
 
@@ -27,7 +30,7 @@ l <- function(x) {
   return(((data[i + 1, 1] - x) * data[i, 2] + (x - data[i, 1]) * data[i + 1, 2]) / (data[i + 1, 1] - data[i, 1]))
 }
 
-### Still working on it
+### give data[1, ] and data[2, ] and will return z_1
 z <- function(vec1, vec2) {
   return((vec2[2] - vec1[2] - vec2[1] * vec2[3] + vec1[1] * vec1[3]) / (vec1[3] - vec2[3]))
 }
@@ -117,7 +120,7 @@ update_step <- function(x_star) {
     newrow <- c(x_star, h(x_star), d(h, x_star), 0) # the new row will be added
     pos <- findInterval(x_star, data[, 1])
     if (pos == length(data[, 1])) { # x_star is the largest number
-      newrow[4] <- Inf
+      newrow[4] <- max
       data[pos, 4] <<- (h(x_star) - h(data[pos, 1]) - x_star * d(h, x_star) + data[pos, 1] * d(h, data[pos, 1])) / (d(h, data[pos, 1]) - d(h, x_star))
     } else if (pos == 0) { # x_star is the smallest number
         newrow[4] <- (h(data[pos + 1, 1]) - h(x_star) - data[pos + 1, 1] * d(h, data[pos + 1, 1]) + x_star * d(h, x_star)) / (d(h, x_star) - d(h, data[pos + 1, 1]))
@@ -130,6 +133,7 @@ update_step <- function(x_star) {
     data <<- data[order(data[, 1]), ]
     return(data)
 }
+
 xx <- runif(10000, -10, 10)
 system.time({
   for (x in xx){
