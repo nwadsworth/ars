@@ -1,15 +1,35 @@
+```{r}
+ars <- function(formula, nsamples, min = -Inf, max = Inf, xinit) {
+  
+  #initialize data matrix
+  
+  data2 <- matrix(c(xinit, h(xinit), d(h, xinit), rep(Inf,length(xinit))), ncol = 4)
+  # get z values for data matrix
+  for(i in 1:(length(xinit)-1)) {
+    data2[i, 4] <- z(data2[i, ], data2[i + 1, ])
+  }
+  
+}
+
+```
+
 Initialization step
 ```{r}
 u <- function(x) {
-  i <- findInterval(x, data[, 1])
-  if(u > data[i, 4]) i <- i + 1
+  i <- findInterval(x, data[, 4]) + 1
+  #if(x > data[i, 4]) i <- i + 1
   return(data[i, 2] + (x - data[i, 1]) * data[i, 3])
 }
 
 l <- function(x) {
   i <- findInterval(x, data[, 1])
-  if(u > data[i, 4]) i <- i + 1
+  if(i == nrow(data) || i == 0) return(-Inf)
   return(((data[i + 1, 1] - x) * data[i, 2] + (x - data[i, 1]) * data[i + 1, 2]) / (data[i + 1, 1] - data[i, 1]))
+}
+
+### Still working on it
+z <- function(vec1, vec2) {
+  return((vec2[2] - vec1[2] - vec2[1] * vec2[3] + vec1[1] * vec1[3]) / (vec1[3] - vec2[3]))
 }
 ```
 
@@ -80,37 +100,37 @@ h <- function(x = 0) {
   return(t)
 }
 #define the derivative function
-d <- function(f = sin,x = 0) {
+d <- function(f = sin, x = 0) {
   return(fderiv(f, x, n = 1, method = "central"))
 }
 
 #assume a data matrix, contain (y, h(y), h'(y), z), totally 4 columns.
 #assume that we already have 4 (at least 2) intial point, for the matrix.
-data = rbind(c(-1.5, -2.043939, 1.5, -1.25), c(-1,-1.418939,1,0), c(1,-1.418939,-1, Inf))
-index.ordered = order(data[ ,1])
-data = data[index.ordered, ]# order the data
+data <- rbind(c(-1.5, -2.043939, 1.5, -1.25), c(-1,-1.418939,1,0), c(1,-1.418939,-1, Inf))
+index.ordered <- order(data[ ,1])
+data <- data[index.ordered, ]# order the data
 
 #assume we have a new generated sampling point: x_star
 #x_star=find_x_star()
-x_star = -1.7 
+x_star <- -1.7 
 update_step <- function(x_star) {
-    newrow = c(x_star, h(x_star), d(h, x_star), 0) # the new row will be added
-    pos = findInterval(x_star, data[, 1])
+    newrow <- c(x_star, h(x_star), d(h, x_star), 0) # the new row will be added
+    pos <- findInterval(x_star, data[, 1])
     if (pos == length(data[, 1])) { # x_star is the largest number
-      newrow[4] = Inf
+      newrow[4] <- Inf
       data[pos, 4] <<- (h(x_star) - h(data[pos, 1]) - x_star * d(h, x_star) + data[pos, 1] * d(h, data[pos, 1])) / (d(h, data[pos, 1]) - d(h, x_star))
-      }else if (pos == 0){ # x_star is the smallest number
-        newrow[4] = (h(data[pos + 1, 1]) - h(x_star) - data[pos+1,1] * d(h, data[pos + 1, 1]) + x_star * d(h, x_star)) / (d(h, x_star) - d(h, data[pos + 1, 1]))
-        } else{ # x_star is not the smallest or the largest number
-          newrow[4]=(h(data[pos + 1, 1])-h(x_star)-data[pos+1,1]*d(h,data[pos+1,1])+x_star*d(h,x_star))/(d(h,x_star)-d(h,data[pos+1,1]))
+    } else if (pos == 0) { # x_star is the smallest number
+        newrow[4] <- (h(data[pos + 1, 1]) - h(x_star) - data[pos+1,1] * d(h, data[pos + 1, 1]) + x_star * d(h, x_star)) / (d(h, x_star) - d(h, data[pos + 1, 1]))
+      } else { # x_star is not the smallest or the largest number
+          newrow[4] <- (h(data[pos + 1, 1])-h(x_star)-data[pos+1,1]*d(h,data[pos+1,1])+x_star*d(h,x_star))/(d(h,x_star)-d(h,data[pos+1,1]))
           data[pos,4] <<- (h(x_star)-h(data[pos, 1]) - x_star * d(h,x_star)+data[pos,1]*d(h,data[pos,1]))/(d(h,data[pos,1])-d(h, x_star))
           }
     data <<- rbind(data,newrow[1:4])
     #order the data
     data <<- data[order(data[, 1]), ]
-    return (data)
+    return(data)
 }
-xx = runif(10000, -10, 10)
+xx <- runif(10000, -10, 10)
 system.time({
   for (x in xx){
     update_step(x)
