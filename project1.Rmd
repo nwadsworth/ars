@@ -1,44 +1,61 @@
+Initialization step
+```{r}
+u <- function(x) {
+  i <- findInterval(x, data[, 1])
+  if(u > data[i, 4]) i <- i + 1
+  return(data[i, 2] + (x - data[i, 1]) * data[i, 3])
+}
+
+l <- function(x) {
+  i <- findInterval(x, data[, 1])
+  if(u > data[i, 4]) i <- i + 1
+  return(((data[i + 1, 1] - x) * data[i, 2] + (x - data[i, 1]) * data[i + 1, 2]) / (data[i + 1, 1] - data[i, 1]))
+}
+```
+
 ```{r}
 #return a list int_u=(int[exp(u1)], , , int[exp(uk)])
-int_u<-function(u, z){
-  k<-length(u)
-  int_u<-numeric(k)
+int_u <- function(u, z) {
+  k <- length(u)
+  int_u <- numeric(k)
   for (i in 1:k){
-    int_u[i]<-integrate(u[i],z[i],z[i+1])[[1]]
+    int_u[i] <- integrate(u[i], z[i], z[i + 1])[[1]]
   }
   return(int_u)
 }
+
 #cdf of s_k
-cdf<-function(int_u){
-  cdf=c(0, cumsum(int_u/sum(int_u)))
+cdf <- function(int_u) {
+  cdf = c(0, cumsum(int_u / sum(int_u)))
 }
 
-find_x_star<-function(cdf,int_u,h_p,z,t,h,u){
+find_x_star <- function(cdf, int_u, h_p, z, t, h, u) {
   #Inverse CDF Method
-  r<-runif(1)
-  i<-which(r<cumsum(int_u/sum(int_u)))[1]
-  A<-r-cdf[i]
-  C<-sum(int_u)
-  B<-A*C*h_p[i]
-  D<-B+exp(u(z[i]))#########
-  x_star<-t[i]+(log(D)-h[i])/h_p[i]
+  r <- runif(1)
+  i <- which(r < cumsum(int_u/sum(int_u)))[1]
+  A <- r - cdf[i]
+  C <- sum(int_u)
+  B <- A * C * h_p[i]
+  D <- B + exp(u(z[i]))#########
+  x_star <- t[i] + (log(D) - h[i]) / h_p[i]
   return(x_star)
 }
+
 #accept x_star if it returns TRUE
-test<-function(x_star,l,u){
-  w<-runif(1)
-  t_1<-exp(l(x_star)-u(x_star))
-  t_2<-exp(h(x_star)-u(x_star))
+test <- function(x_star, l, u){
+  w <- runif(1)
+  t_1 <- exp(l(x_star) - u(x_star))
+  t_2 <- exp(h(x_star) - u(x_star))
   
-  if (w<=t_1){
-    res<-TRUE
+  if (w <= t_1){
+    res <- TRUE
   }
   else{
-    if (w<=t_2){
-      res<-TRUE
+    if (w <= t_2){
+      res <- TRUE
     }
     else {
-      res<-FALSE
+      res <- FALSE
     }
   }
   return(res)
@@ -53,47 +70,47 @@ test<-function(x_star,l,u){
 library(pracma) # derivative function fderiv() is from this package.
 
 # test function f, use the normal distribution for test
-f<-function(x=0){
-  y<-dnorm(x)
+f <- function(x = 0) {
+  y <- dnorm(x)
   return(y)
 }
 # The log of the test function
-h<-function(x=0){
-  t<- log(f(x))
+h <- function(x = 0) {
+  t <- log(f(x))
   return(t)
 }
 #define the derivative function
-d<-function(f=sin,x=0){
-  return(fderiv(f,x,n=1, method = "central"))
+d <- function(f = sin,x = 0) {
+  return(fderiv(f, x, n = 1, method = "central"))
 }
 
 #assume a data matrix, contain (y, h(y), h'(y), z), totally 4 columns.
 #assume that we already have 4 (at least 2) intial point, for the matrix.
-data=rbind(c(-1.5, -2.043939, 1.5, -1.25), c(-1,-1.418939,1,0), c(1,-1.418939,-1, Inf))
-index.ordered=order(data[,1])
-data=data[index.ordered,]# order the data
+data = rbind(c(-1.5, -2.043939, 1.5, -1.25), c(-1,-1.418939,1,0), c(1,-1.418939,-1, Inf))
+index.ordered = order(data[ ,1])
+data = data[index.ordered, ]# order the data
 
 #assume we have a new generated sampling point: x_star
 #x_star=find_x_star()
-x_star=-1.7 
-update_step <- function(x_star){
-    newrow=c(x_star, h(x_star),d(h,x_star),0) # the new row will be added
-    pos=findInterval(x_star,data[,1])
-    if (pos==length(data[,1])){ # x_star is the largest number
-      newrow[4]=Inf
-      data[pos,4]<<-(h(x_star)-h(data[pos,1])-x_star*d(h,x_star)+data[pos,1]*d(h,data[pos,1]))/(d(h,data[pos,1])-d(h,x_star))
-      }else if (pos==0){ # x_star is the smallest number
-        newrow[4]=(h(data[pos+1,1])-h(x_star)-data[pos+1,1]*d(h,data[pos+1,1])+x_star*d(h,x_star))/(d(h,x_star)-d(h,data[pos+1,1]))
+x_star = -1.7 
+update_step <- function(x_star) {
+    newrow = c(x_star, h(x_star), d(h, x_star), 0) # the new row will be added
+    pos = findInterval(x_star, data[, 1])
+    if (pos == length(data[, 1])) { # x_star is the largest number
+      newrow[4] = Inf
+      data[pos, 4] <<- (h(x_star) - h(data[pos, 1]) - x_star * d(h, x_star) + data[pos, 1] * d(h, data[pos, 1])) / (d(h, data[pos, 1]) - d(h, x_star))
+      }else if (pos == 0){ # x_star is the smallest number
+        newrow[4] = (h(data[pos + 1, 1]) - h(x_star) - data[pos+1,1] * d(h, data[pos + 1, 1]) + x_star * d(h, x_star)) / (d(h, x_star) - d(h, data[pos + 1, 1]))
         } else{ # x_star is not the smallest or the largest number
-          newrow[4]=(h(data[pos+1,1])-h(x_star)-data[pos+1,1]*d(h,data[pos+1,1])+x_star*d(h,x_star))/(d(h,x_star)-d(h,data[pos+1,1]))
-          data[pos,4]<<-(h(x_star)-h(data[pos,1])-x_star*d(h,x_star)+data[pos,1]*d(h,data[pos,1]))/(d(h,data[pos,1])-d(h, x_star))
+          newrow[4]=(h(data[pos + 1, 1])-h(x_star)-data[pos+1,1]*d(h,data[pos+1,1])+x_star*d(h,x_star))/(d(h,x_star)-d(h,data[pos+1,1]))
+          data[pos,4] <<- (h(x_star)-h(data[pos, 1]) - x_star * d(h,x_star)+data[pos,1]*d(h,data[pos,1]))/(d(h,data[pos,1])-d(h, x_star))
           }
-    data<<-rbind(data,newrow[1:4])
+    data <<- rbind(data,newrow[1:4])
     #order the data
-    data<<-data[order(data[,1]),]
+    data <<- data[order(data[, 1]), ]
     return (data)
 }
-xx=runif(10000, -10, 10)
+xx = runif(10000, -10, 10)
 system.time({
   for (x in xx){
     update_step(x)
