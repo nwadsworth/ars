@@ -3,9 +3,9 @@ ars <- function(formula, nsamples, min = -Inf, max = Inf, xinit) {
   
   #initialize data matrix
   
-  data2 <- matrix(c(xinit, h(xinit), d(h, xinit), rep(Inf,length(xinit))), ncol = 4)
+  data2 <- matrix(c(xinit, h(xinit), d(h, xinit), rep(Inf, length(xinit))), ncol = 4)
   # get z values for data matrix
-  for(i in 1:(length(xinit)-1)) {
+  for(i in 1:(length(xinit) - 1)) {
     data2[i, 4] <- z(data2[i, ], data2[i + 1, ])
   }
   
@@ -52,7 +52,7 @@ cdf <- function(int_u) {
 find_x_star <- function(cdf, int_u, h_p, z, t, h, u) {
   #Inverse CDF Method
   r <- runif(1)
-  i <- which(r < cumsum(int_u/sum(int_u)))[1]
+  i <- which(r < cumsum(int_u / sum(int_u)))[1]
   A <- r - cdf[i]
   C <- sum(int_u)
   B <- A * C * h_p[i]
@@ -106,7 +106,7 @@ d <- function(f = sin, x = 0) {
 
 #assume a data matrix, contain (y, h(y), h'(y), z), totally 4 columns.
 #assume that we already have 4 (at least 2) intial point, for the matrix.
-data <- rbind(c(-1.5, -2.043939, 1.5, -1.25), c(-1,-1.418939,1,0), c(1,-1.418939,-1, Inf))
+data <- rbind(c(-1.5, -2.043939, 1.5, -1.25), c(-1, -1.418939, 1, 0), c(1, -1.418939, -1, Inf))
 index.ordered <- order(data[ ,1])
 data <- data[index.ordered, ]# order the data
 
@@ -120,12 +120,12 @@ update_step <- function(x_star) {
       newrow[4] <- Inf
       data[pos, 4] <<- (h(x_star) - h(data[pos, 1]) - x_star * d(h, x_star) + data[pos, 1] * d(h, data[pos, 1])) / (d(h, data[pos, 1]) - d(h, x_star))
     } else if (pos == 0) { # x_star is the smallest number
-        newrow[4] <- (h(data[pos + 1, 1]) - h(x_star) - data[pos+1,1] * d(h, data[pos + 1, 1]) + x_star * d(h, x_star)) / (d(h, x_star) - d(h, data[pos + 1, 1]))
+        newrow[4] <- (h(data[pos + 1, 1]) - h(x_star) - data[pos + 1, 1] * d(h, data[pos + 1, 1]) + x_star * d(h, x_star)) / (d(h, x_star) - d(h, data[pos + 1, 1]))
       } else { # x_star is not the smallest or the largest number
-          newrow[4] <- (h(data[pos + 1, 1])-h(x_star)-data[pos+1,1]*d(h,data[pos+1,1])+x_star*d(h,x_star))/(d(h,x_star)-d(h,data[pos+1,1]))
-          data[pos,4] <<- (h(x_star)-h(data[pos, 1]) - x_star * d(h,x_star)+data[pos,1]*d(h,data[pos,1]))/(d(h,data[pos,1])-d(h, x_star))
+          newrow[4] <- (h(data[pos + 1, 1]) - h(x_star) - data[pos + 1, 1] * d(h, data[pos + 1, 1]) + x_star * d(h, x_star)) / (d(h, x_star) - d(h, data[pos + 1, 1]))
+          data[pos, 4] <<- (h(x_star) - h(data[pos, 1]) - x_star * d(h, x_star) + data[pos, 1] * d(h, data[pos, 1])) / (d(h, data[pos, 1]) - d(h, x_star))
           }
-    data <<- rbind(data,newrow[1:4])
+    data <<- rbind(data, newrow[1:4])
     #order the data
     data <<- data[order(data[, 1]), ]
     return(data)
