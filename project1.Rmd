@@ -14,7 +14,8 @@ ars <- function(formula, nsamples, min = -Inf, max = Inf, xinit) {
   
   xstars <- rep(0, nsamples)
   while(i < nsamples){
-    find_x_star(cdf, int_u, d, z, t, h, u)
+    u <- get_u()
+    find_x_star(cdf, int_u, d, zvector, t, h, u)
 
   }
   return(xstars)
@@ -24,7 +25,7 @@ ars <- function(formula, nsamples, min = -Inf, max = Inf, xinit) {
 
 Initialization step
 ```{r}
-make_u <- function(i) { force(i); function(x) (data[i, 2] + (x - data[i, 1]) * data[i, 3]) }
+make_u <- function(i) { force(i); function(x) exp(data[i, 2] + (x - data[i, 1]) * data[i, 3]) }
 
 get_u <- function(){
   ulist <- list()
@@ -36,7 +37,7 @@ get_u <- function(){
  
 make_l <- function(i) { 
   force(i)
-  function(x) ((data[i + 1, 1] - x) * data[i, 2] + (x - data[i, 1]) * data[i + 1, 2]) / (data[i + 1, 1] - data[i, 1])
+  function(x) exp((data[i + 1, 1] - x) * data[i, 2] + (x - data[i, 1]) * data[i + 1, 2]) / (data[i + 1, 1] - data[i, 1])
 }
 
 get_l <- function(){
@@ -62,7 +63,7 @@ int_u <- function(u, z) {
   k <- length(u)
   int_u <- numeric(k)
   for (i in 1:k){
-    int_u[i] <- integrate(u[i], z[i], z[i + 1])[[1]]
+    int_u[i] <- integrate(u[[i]], z[i], z[i + 1])[[1]]
   }
   return(int_u)
 }
