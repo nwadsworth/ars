@@ -2,7 +2,7 @@
 ars <- function(formula, nsamples, min = -Inf, max = Inf, xinit) {
   
   #initialize data matrix
-  
+  xinit <- sort(xinit)
   data2 <- matrix(c(xinit, h(xinit), d(h, xinit)), ncol = 3)
   # get z values for data matrix  
   zvector <- NULL
@@ -12,23 +12,43 @@ ars <- function(formula, nsamples, min = -Inf, max = Inf, xinit) {
   }
   zvector[length(xinit) + 1] <- max
   
-  
+  xstars <- rep(0, nsamples)
+  while(i < nsamples){
+    find_x_star(cdf, int_u, d, z, t, h, u)
+
+  }
+  return(xstars)
 }
 
 ```
 
 Initialization step
 ```{r}
-u <- function(x) {
-  i <- findInterval(x, data[, 4]) + 1
-  return(data[i, 2] + (x - data[i, 1]) * data[i, 3])
+make_u <- function(i) { force(i); function(x) (data[i, 2] + (x - data[i, 1]) * data[i, 3]) }
+
+get_u <- function(){
+  ulist <- list()
+  for(i in 1:nrow(data)){
+    ulist[[i]] <- make_u(i)
+  }
+  return(ulist)
+}
+ 
+make_l <- function(i) { 
+  force(i)
+  function(x) ((data[i + 1, 1] - x) * data[i, 2] + (x - data[i, 1]) * data[i + 1, 2]) / (data[i + 1, 1] - data[i, 1])
 }
 
-l <- function(x) {
-  i <- findInterval(x, data[, 1])
-  if(i == nrow(data) || i == 0) return(-Inf)
-  return(((data[i + 1, 1] - x) * data[i, 2] + (x - data[i, 1]) * data[i + 1, 2]) / (data[i + 1, 1] - data[i, 1]))
+get_l <- function(){
+  llist <- list()
+  llist[[1]] <- -Inf
+  for(i in 2:nrow(data)){
+    llist[[i]] <- make_l(i - 1)
+  }
+  llist[[nrow(data) + 1]] <- -Inf
+  return(llist)
 }
+
 
 ### give data[1, ] and data[2, ] and will return z_1
 z <- function(vec1, vec2) {
@@ -70,11 +90,11 @@ test <- function(x_star, l, u){
   t_1 <- exp(l(x_star) - u(x_star))
   t_2 <- exp(h(x_star) - u(x_star))
   
-  if (w <= t_1){
+  if (w <= t_1) {
     res <- TRUE
   }
-  else{
-    if (w <= t_2){
+  else {
+    if (w <= t_2) {
       res <- TRUE
     }
     else {
@@ -149,17 +169,30 @@ update_step2 <- function(x_star) {
     pos <- findInterval(x_star, data2[, 1])
     if (pos == length(data2[, 1])) { # x_star is the largest number
       newrow[4] <- Inf
-      data2[pos, 4] <<- z(data2[pos, ], newrow)
+      zvector[pos + 1] <<- z(data2[pos, ], newrow)
     } else if (pos == 0) { # x_star is the smallest number
         newrow[4] <- z(newrow, data2[pos + 1, ])
       } else { # x_star is not the smallest or the largest number
           newrow[4] <- z(newrow, data2[pos + 1, ])
-          data2[pos, 4] <<- z(data2[pos, ], newrow)
-          }
-    data2 <<- rbind(data2, newrow[1:4])
+          zvector[pos + 1] <<- z(data2[pos, ], newrow)
+      }
+    zvector[length(zvector) + 1] <<- newrow[4]
+    zvector <<- zvector[order(zvector)]
+    data2 <<- rbind(data2, newrow[1:3])
     #order the data
     data2 <<- data2[order(data2[, 1]), ]
     return(data2)
 }
 ```
 
+```{r}
+plot(h, -2, 2)
+points(data[1,1],data[1,2])
+points(data[2,1],data[2,2])
+points(data[3,1],data[3,2])
+curve(u[[1]](x), -2, data[1,4],add = TRUE)
+curve(u[[2]](x), data[1,4], data[2,4], add = TRUE)
+curve(u[[3]](x), data[2,4], 2, add = TRUE)
+curve(l[[2]](x), -1.5,-1, add = TRUE)
+curve(l[[3]](x), -1,1, add = TRUE)
+```
