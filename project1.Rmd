@@ -18,10 +18,43 @@ ars <- function(formula, nsamples, min = -Inf, max = Inf, xinit) {
     find_x_star(cdf, int_u, d, zvector, t, h, u)
 
   }
+  
   return(xstars)
 }
 
 ```
+
+ars_new <- function(formula, nsamples, min = -Inf, max = Inf, xinit) {
+  
+  #initialize data matrix
+  xinit <- sort(xinit)
+  data2 <- matrix(c(xinit, h(xinit), d(h, xinit)), ncol = 3)
+  # get z values for data matrix  
+  zvector <- NULL
+  zvector[1] <- min
+  for(i in 1:(length(xinit) - 1)) {
+    zvector[i+1] <- z(data2[i, ], data2[i + 1, ])
+  }
+  zvector[length(xinit) + 1] <- max
+  
+  xstars <- rep(0, nsamples)
+  
+  for (i in 1:nsamples){
+  u_list<-get_u(data2)
+  l_list<-get_l(data2)  
+  int_u_l<-int_u_new(data2,zvector,u_list)
+  cdf_l = c(0, cumsum(int_u_l / sum(int_u_l)))
+  result<-FALSE
+  while(result==FALSE){
+       x_star<-find_x_star_new(cdf, int_u_l, data2, zvector,u_list)
+       result<-test(x_star,data2)
+     }
+     
+     #update step
+   xstars[i]<-xstar 
+  }
+  return(xstars)
+}
 
 Initialization step
 ```{r}
@@ -67,7 +100,17 @@ int_u <- function(u, z) {
   }
   return(int_u)
 }
-
+#Fix int_u
+int_u_new<-function(data_,z,u_list){
+  k<-length(data_[,1])
+  int_u_l<-rep(0,k)
+  for (j in 1:k){
+     int_u_l[j]<-(exp(u_list[[j]](zvector[j+1]))-exp(u_list[[j]](zvector[j])))/data2[j,3]
+   }
+  int_u_l
+  }
+  
+  
 #cdf of s_k
 cdf <- function(int_u) {
   cdf = c(0, cumsum(int_u / sum(int_u)))
@@ -82,6 +125,19 @@ find_x_star <- function(cdf, int_u, h_p, z, t, h, u) {
   B <- A * C * h_p[i]
   D <- B + exp(u(z[i]))#########
   x_star <- t[i] + (log(D) - h[i]) / h_p[i]
+  return(x_star)
+}
+
+#Fix find_x_star
+find_x_star_new <- function(cdf, int_u_l, data_, z,u_list) {
+  #Inverse CDF Method
+  r <- runif(1)
+  i<-findInterval(r,cdf)
+  A <- r - cdf[i]
+  C <- sum(int_u_l)
+  B <- A * C * data_[i,3]
+  D <- B + exp(u_list[[i]](z[i]))
+  x_star <- data_[i,1] + (log(D) - data_[i,2]) / data_[i,3]
   return(x_star)
 }
 
