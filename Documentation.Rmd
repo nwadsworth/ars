@@ -1,0 +1,17 @@
+---
+title: "STAT 243 Final Project: ars package"
+subtitle: "Install from Github: nwadsworth/ars"
+author: "Narae Wadsworth, Daije Sun, Lyu Zheng"
+date: "12/12/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# The Approach
+
+# Testing
+
+# Contributions
