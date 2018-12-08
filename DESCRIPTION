@@ -1,0 +1,16 @@
+Package: ars
+Title: Adaptive rejection sampling
+Version: 0.0.0.9000
+Authors@R: c(person("Daije", "Sun", email = "sundj2016@berkeley.edu", role = c("aut", "cre")),
+              person("Narae", "Wadsworth", email = "nwadsworth@berkeley.edu", role = c("aut")),
+              person("Lyu", "Zheng", email = "lyu_zheng@berkeley.edu", role = c("aut")))
+Description: Performs adaptive random sampling as proposed by Gilks et. al in "Adaptive Rejection Sampling for Gibbs Sampling".
+Depends: R (>= 3.5.1)
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+Imports: 
+  pracma,
+  stats,
+  utils
+RoxygenNote: 6.1.1
