@@ -5,18 +5,21 @@ h <- function(f, x = 0) {
 }
 
 # get h'(x) -------------------------------------------------------------------
+#' @importFrom pracma fderiv
 d <- function(f, x = 0) {
   return(fderiv(f, x, n = 1, method = "central")/f(x))
 }
 
 # initialize the data matrix from user input ----------------------------------
+#' @importFrom utils head
+#' @importFrom utils tail
 initial <- function(formulas, min, max, xinit) {
   invalue = 1:(4 * length(xinit))
   data <- matrix(invalue, nrow = length(xinit), ncol = 4)
   data[, 1] <- xinit[order(xinit)]
   data[, 2] <- h(formulas, data[, 1])
   data[, 3] <- d(formulas, data[, 1])
-  zt <- (tail(data[, 2], -1) - head(data[, 2], -1) - tail(data[, 1], -1) * tail(data[, 3], -1) + head(data[, 1], -1) * head(data[, 3], -1)) / 
+  zt <- (tail(data[, 2], -1) - head(data[, 2], -1) - tail(data[, 1], -1) * tail(data[, 3], -1) + head(data[, 1], -1) * head(data[, 3], -1)) /
     (head(data[, 3], -1) - tail(data[, 3], -1))
   data[, 4] <- c(zt, max)
   return(data)
@@ -31,13 +34,16 @@ u <- function(data, x) {
 # get l_k(x) ------------------------------------------------------------------
 l <- function(data, x) {
   i <- findInterval(x, data[, 1])
-  if (i == nrow(data) || i == 0) 
+  if (i == nrow(data) || i == 0)
     return(-Inf)
   return(((data[i + 1, 1] - x) * data[i, 2] + (x - data[i, 1]) * data[i + 1, 2])/(data[i + 1, 1] - data[i, 1]))
 }
 
 # get x* ----------------------------------------------------------------------
-get_sample <- function(f = dnorm, y, hp, zt, min) {
+#' @importFrom stats runif
+#' @importFrom utils head
+#' @importFrom utils tail
+get_sample <- function(f, y, hp, zt, min) {
   z = c(min, zt)
   # make sure hp has no 0, otherwise will be mistakes
   intgration <- f(y)/hp * exp(-hp * y) * (exp(hp * tail(z, -1)) - exp(hp * head(z, -1)))
@@ -52,6 +58,7 @@ get_sample <- function(f = dnorm, y, hp, zt, min) {
 }
 
 # get u_k(x) ------------------------------------------------------------------
+#' @importFrom stats runif
 test <- function(data, f, x) {
   # the first return value is accept, the second is update or not.
   w = runif(1)
@@ -71,18 +78,18 @@ update_step <- function(data, f, x_star, min, max) {
   if (pos == length(data[, 1])) {
     # x_star is the largest number
     newrow[4] <- max
-    data[pos, 4] <- (h(f, x_star) - h(f, data[pos, 1]) - x_star * d(f, x_star) + data[pos, 1] * d(f, data[pos, 1])) / 
-                    (d(f, data[pos, 1]) - d(f, x_star))
+    data[pos, 4] <- (h(f, x_star) - h(f, data[pos, 1]) - x_star * d(f, x_star) + data[pos, 1] * d(f, data[pos, 1])) /
+      (d(f, data[pos, 1]) - d(f, x_star))
   } else if (pos == 0) {
     # x_star is the smallest number
-    newrow[4] <- (h(f, data[pos + 1, 1]) - h(f, x_star) - data[pos + 1, 1] * d(f, data[pos + 1, 1]) + x_star * d(f, x_star)) / 
+    newrow[4] <- (h(f, data[pos + 1, 1]) - h(f, x_star) - data[pos + 1, 1] * d(f, data[pos + 1, 1]) + x_star * d(f, x_star)) /
       (d(f, x_star) - d(f, data[pos + 1, 1]))
   } else {
     # x_star is not the smallest or the largest number
-    newrow[4] <- (h(f, data[pos + 1, 1]) - h(f, x_star) - data[pos + 1, 1] * d(f, data[pos + 1, 1]) + x_star * d(f, x_star)) / 
-                 (d(f, x_star) - d(f, data[pos + 1, 1]))
-    data[pos, 4] <- (h(f, x_star) - h(f, data[pos, 1]) - x_star * d(f, x_star) + data[pos, 1] * d(f, data[pos, 1])) / 
-                    (d(f, data[pos, 1]) - d(f, x_star))
+    newrow[4] <- (h(f, data[pos + 1, 1]) - h(f, x_star) - data[pos + 1, 1] * d(f, data[pos + 1, 1]) + x_star * d(f, x_star)) /
+      (d(f, x_star) - d(f, data[pos + 1, 1]))
+    data[pos, 4] <- (h(f, x_star) - h(f, data[pos, 1]) - x_star * d(f, x_star) + data[pos, 1] * d(f, data[pos, 1])) /
+      (d(f, data[pos, 1]) - d(f, x_star))
   }
   data <- rbind(data, newrow[1:4])
   # order the data
@@ -91,9 +98,11 @@ update_step <- function(data, f, x_star, min, max) {
 }
 
 
-# perform the adaptive random sampling ----------------------------------------
-#' Perform the adaptive random sampling from the specified log-concave density
-#' 
+# perform the adaptive rejection sampling ----------------------------------------
+#' Adaptive Rejection Sampling
+#'
+#' Perform the adaptive rejection sampling from the specified log-concave density
+#'
 #' @param f A function of the density we want to sample from. Defaults to standard normal.
 #' @param nsamples The number of samples desired. Defaults to 100
 #' @param min The minimum of the domain of \code{f}. Defaults to -Inf.
@@ -101,9 +110,12 @@ update_step <- function(data, f, x_star, min, max) {
 #' @param xinit Starting points for which \code{f} is defined.
 #' @return A vector (of length \code{nsamples}) of sampled points from the specified distribution.
 #' @examples
-#' ars(dnorm, nsamples = 100, min = -Inf, max = Inf, xinit = c(-1.5, -0.2, 0.5, 1))
-#' g <- function(x) {dnorm(x, 5, 2)}
-#' add(g, 1000, c(-4, -2, 7))
+#' a <- ars(dnorm, nsamples = 100, min = -Inf, max = Inf, xinit = c(-1.5, -0.2, 0.5, 1))
+#' g <- function(x) {dchisq(x, df = 3)}
+#' @importFrom pracma fderiv
+#' @importFrom stats runif
+#' @importFrom stats dnorm
+#' @importFrom stats dchisq
 #' @export
 ars <- function(f = dnorm, nsamples = 100, min = -Inf, max = Inf, xinit = c(-1.5, -0.2, 0.5, 1)) {
   data <- initial(formulas = f, min = min, max = max, xinit = xinit)
