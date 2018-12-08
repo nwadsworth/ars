@@ -92,19 +92,32 @@ update_step <- function(data, f, x_star, min, max) {
 
 
 # perform the adaptive random sampling ----------------------------------------
-ars <- function(formulas = dnorm, nsamples = 100, min = -Inf, max = Inf, xinit = c(-1.5, -0.2, 0.5, 1)) {
-  data <- initial(formulas = formulas, min = min, max = max, xinit = xinit)
+#' Perform the adaptive random sampling from the specified log-concave density
+#' 
+#' @param f A function of the density we want to sample from. Defaults to standard normal.
+#' @param nsamples The number of samples desired. Defaults to 100
+#' @param min The minimum of the domain of \code{f}. Defaults to -Inf.
+#' @param max The maximum of the domain of \code{f}. Defaults to Inf.
+#' @param xinit Starting points for which \code{f} is defined.
+#' @return A vector (of length \code{nsamples}) of sampled points from the specified distribution.
+#' @examples
+#' ars(dnorm, nsamples = 100, min = -Inf, max = Inf, xinit = c(-1.5, -0.2, 0.5, 1))
+#' g <- function(x) {dnorm(x, 5, 2)}
+#' add(g, 1000, c(-4, -2, 7))
+#' @export
+ars <- function(f = dnorm, nsamples = 100, min = -Inf, max = Inf, xinit = c(-1.5, -0.2, 0.5, 1)) {
+  data <- initial(formulas = f, min = min, max = max, xinit = xinit)
   nsam = 0
   result = rep(0, nsamples)
   while (nsam < nsamples) {
-    sam <- get_sample(f = formulas, y = data[, 1], hp = data[, 3], z = data[, 4], min = min)
-    accept <- test(data, f = formulas, sam)
+    sam <- get_sample(f = f, y = data[, 1], hp = data[, 3], z = data[, 4], min = min)
+    accept <- test(data, f = f, sam)
     if (accept[1]) {
       nsam = nsam + 1
       result[nsam] = sam
     }
     if (accept[2]) {
-      data = update_step(data, f = formulas, x_star = sam, min = min, max = max)
+      data = update_step(data, f = f, x_star = sam, min = min, max = max)
     }
   }
   info <- paste0("In total, ", length(data[, 1]), " sampling points needed to be stored in the Matrix!")
