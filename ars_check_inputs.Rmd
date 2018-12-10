@@ -123,7 +123,7 @@ update_step <- function(data, f, x_star, min, max) {
 #' @export
 ars <- function(f = dnorm, nsamples = 1, min = -Inf, max = Inf, xinit = c(-1.5, -0.2, 0.5, 1)) {
   library(assertthat)
-  #check some inputs
+  #check inputs nsamples, min, max, xinit
   assert_that((nsamples>=0) && (min<max) && (is.vector(xinit)) 
               &&(length(unique(xinit))>=2)  &&(is.function(f)))
   
@@ -142,7 +142,15 @@ ars <- function(f = dnorm, nsamples = 1, min = -Inf, max = Inf, xinit = c(-1.5, 
   nsam = 0
   result = rep(0, nsamples)
   while (nsam < nsamples) {
-
+    #Check that h(x) is bounded by l(x) and u(x) at each z 
+    z<-head(data[, 4],-1)
+    for (i in z){
+      u_z<-u(data,i)
+      h_z<-h(f,i)
+      l_z<-l(data,i)
+      assert_that((u_z>=h_z) && (h_z>=l_z))
+    }
+    
     sam <- get_sample(f = f, y = data[, 1], hp = data[, 3], z = data[, 4], min = min)
     accept <- test(data, f = f, sam)
     if (accept[1]) {
