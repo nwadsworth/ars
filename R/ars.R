@@ -14,7 +14,6 @@ d <- function(f, x = 0) {
 #' @importFrom utils head
 #' @importFrom utils tail
 initial <- function(formulas, min, max, xinit) {
-  xinit=sort(unique(xinit))
   invalue = 1:(4 * length(xinit))
   data <- matrix(invalue, nrow = length(xinit), ncol = 4)
   data[, 1] <- xinit[order(xinit)]
@@ -58,7 +57,7 @@ get_sample <- function(f, y, hp, zt, min) {
   return(s)
 }
 
-# get u_k(x) ------------------------------------------------------------------
+# perform test on x* ----------------------------------------------------------
 #' @importFrom stats runif
 test <- function(data, f, x) {
   # the first return value is accept, the second is update or not.
@@ -103,8 +102,6 @@ update_step <- function(data, f, x_star, min, max) {
 check_dist<-function(formulas=dnorm, nsamples=100, min=-Inf, max=Inf, xinit=c(-1.5,-0.2, 0.5, 1)) {
   formulas <- Vectorize(formulas)
   h<-function(x) return(log(formulas(x)))
-  xinit=sort(unique(xinit))
-  xinit=xinit[(xinit>min)&(xinit<max)]
   #if ture, Non-log-Concative
   dd <-function(x) return(-fderiv(h,x, n=2, method = "central"))
   opt<-nlm(dd,tail(xinit,1))
@@ -118,12 +115,12 @@ check_dist<-function(formulas=dnorm, nsamples=100, min=-Inf, max=Inf, xinit=c(-1
 
     if(!sum(!(abs(fderiv(h, xinit, n = 1, method = "central"))<1e-4))){
       #uniform distribution
-      print("This is a probaly uniform distribution!")
+      print("This is probably a uniform distribution!")
       if(formulas(xinit)<=0){
         print("Density function must be positive!")
         return(FALSE)
       }
-      if((max==Inf) | (min==-Inf)){
+      if((max == Inf) | (min == -Inf)){
         print("Please reset the min or max, they must be limited values")
         return(FALSE)
       }
@@ -138,7 +135,7 @@ check_dist<-function(formulas=dnorm, nsamples=100, min=-Inf, max=Inf, xinit=c(-1
       }
       w=runif(nsamples)
       res=log(exp(lamuda*min)+w*(exp(lamuda*max)-exp(lamuda*min)))/lamuda
-      print("This is probaly an exponential distribution!")
+      print("This is probably an exponential distribution!")
       return(res)
     }
 
@@ -178,12 +175,13 @@ check_dist<-function(formulas=dnorm, nsamples=100, min=-Inf, max=Inf, xinit=c(-1
 #' @importFrom assertthat assert_that
 #' @export
 ars <- function(f = dnorm, nsamples = 100, min = -Inf, max = Inf, xinit = c(-1.5, -0.2, 0.5, 1)) {
+  xinit=sort(unique(xinit))
+  xinit=xinit[(xinit>min)&(xinit<max)]
+
   #check inputs nsamples, min, max, xinit
   assert_that((nsamples>=0) && (min<max) && (is.vector(xinit))
               &&(length(unique(xinit))>=2)  &&(is.function(f)))
 
-  xinit=sort(unique(xinit))
-  xinit=xinit[(xinit>min)&(xinit<max)]
   res=check_dist(formulas=f, nsamples=nsamples, min=min, max=max, xinit=xinit)
   if(is.numeric(res)){
     return(res)
@@ -192,8 +190,17 @@ ars <- function(f = dnorm, nsamples = 100, min = -Inf, max = Inf, xinit = c(-1.5
     print("NO sampling result returned!")
     return(NULL)
   }
-  #need check xinit for unbounded cases
   data <- initial(formulas = f, min = min, max = max, xinit = xinit)
+
+  #check the initial values are in the (min,max)
+  assert_that(  (data[1,1] >= min) && (data[length(xinit),1] <= max)   )
+  #check the initial values are valid for unbounded cases.
+  if (min == -Inf) {
+    assert_that(data[1, 3] > 0)
+  }
+  if (max==Inf) {
+    assert_that(data[length(xinit), 3] < 0)
+  }
   nsam = 0
   result = rep(0, nsamples)
   while (nsam < nsamples) {
