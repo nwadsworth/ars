@@ -46,12 +46,12 @@ test_that("Function generates correctly for normal distribution",{
   expect_gt(result$p.value, expected = 0.1)
 })
 
-test_that("Test that ars wound not work for t distribution",{
+test_that("Test that ars would not work for t distribution",{
   g <- function(x) {dt(x,df=10)}
   expect_null(ars(g, nsamples = 1000, xinit = c(-10,2)))
 })
 
-test_that("Test that ars wound not work for Cauchy distribution",{
+test_that("Test that ars would not work for Cauchy distribution",{
   g <- function(x) {dcauchy(x)}
   expect_null(ars(g, nsamples = 1000, xinit = c(-2,2,10)))
 })
