@@ -6,7 +6,7 @@ test_that("Function generates correctly for a gamma distribution",{
   num_of_samples = 100000
   y <- rgamma(num_of_samples, shape = 10, scale = 3)
   g <- function(x) {dgamma(x, shape = 10, scale =3)}
-  x <- ars(g, nsamples = 1000, min = 0, max = Inf , xinit = c(1,50))
+  x <- ars(g, nsamples = 10000, min = 0, max = Inf , xinit = c(1,50))
   result <- ks.test(x, y)
   expect_gt(result$p.value, expected = 0.1)
 })
@@ -41,7 +41,7 @@ test_that("Function generates correctly for normal distribution",{
   num_of_samples = 100000
   y <- rnorm(num_of_samples)
   g <- function(x) {dnorm(x)}
-  x <- ars(g, nsamples = 1000, xinit = c(-1,1))
+  x <- ars(g, nsamples = 10000, xinit = c(-1,1))
   result <- ks.test(x, y)
   expect_gt(result$p.value, expected = 0.1)
 })
@@ -60,7 +60,7 @@ test_that("Function generates correctly for exponential distribution",{
   num_of_samples = 100000
   y <- rexp(num_of_samples,rate=3)
   g <- function(x) {dexp(x,rate=3)}
-  x <- ars(g, nsamples = 1000, min=0, xinit = c(1,3,10))
+  x <- ars(g, nsamples = 10000, min=0, xinit = c(1,3,10))
   result <- ks.test(x, y)
   expect_gt(result$p.value, expected = 0.1)
 })

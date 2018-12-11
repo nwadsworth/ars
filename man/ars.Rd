@@ -8,7 +8,7 @@ ars(f = dnorm, nsamples = 100, min = -Inf, max = Inf,
   xinit = c(-1.5, -0.2, 0.5, 1))
 }
 \arguments{
-\item{f}{A function of the density we want to sample from. Defaults to standard normal.}
+\item{f}{A function of the continuous density we want to sample from. Defaults to standard normal.}
 
 \item{nsamples}{The number of samples desired. Defaults to 100}
 
@@ -16,7 +16,7 @@ ars(f = dnorm, nsamples = 100, min = -Inf, max = Inf,
 
 \item{max}{The maximum of the domain of \code{f}. Defaults to Inf.}
 
-\item{xinit}{Starting points for which \code{f} is defined.}
+\item{xinit}{Vector of starting points for which \code{f} is defined (at least 2).}
 }
 \value{
 A vector (of length \code{nsamples}) of sampled points from the specified distribution.

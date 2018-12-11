@@ -14,6 +14,7 @@ d <- function(f, x = 0) {
 #' @importFrom utils head
 #' @importFrom utils tail
 initial <- function(formulas, min, max, xinit) {
+  xinit=sort(unique(xinit))
   invalue = 1:(4 * length(xinit))
   data <- matrix(invalue, nrow = length(xinit), ncol = 4)
   data[, 1] <- xinit[order(xinit)]
@@ -97,17 +98,75 @@ update_step <- function(data, f, x_star, min, max) {
   return(data)
 }
 
+# Check if the distribution is log-concave or not ----------------------------------------
+#' @importFrom stats nlm
+check_dist<-function(formulas=dnorm, nsamples=100, min=-Inf, max=Inf, xinit=c(-1.5,-0.2, 0.5, 1)) {
+  formulas <- Vectorize(formulas)
+  h<-function(x) return(log(formulas(x)))
+  xinit=sort(unique(xinit))
+  xinit=xinit[(xinit>min)&(xinit<max)]
+  #if ture, Non-log-Concative
+  dd <-function(x) return(-fderiv(h,x, n=2, method = "central"))
+  opt<-nlm(dd,tail(xinit,1))
+  # Secondary derivative large than 0 (or 1e-4) and within the boundary, treat it as non-log-cancave
+  if(((-opt$minimum)>1e-4)&(opt$estimate<max)&(opt$estimate>min)){
+    print("This function is not a log-concave function, this function doesn't work!")
+    return(FALSE)
+  }
+
+  if(!sum(!(abs(fderiv(h, xinit, n = 2, method = "central"))<=1e-4))){
+
+    if(!sum(!(abs(fderiv(h, xinit, n = 1, method = "central"))<1e-4))){
+      #uniform distribution
+      print("This is a probaly uniform distribution!")
+      if(formulas(xinit)<=0){
+        print("Density function must be positive!")
+        return(FALSE)
+      }
+      if((max==Inf) | (min==-Inf)){
+        print("Please reset the min or max, they must be limited values")
+        return(FALSE)
+      }
+      return(runif(nsamples, min ,max))
+
+    }else{
+      # exponential distribution
+      lamuda=fderiv(h, tail(xinit,1), n = 1, method = "central")
+      if((min==-Inf)|(lamuda>0&max==Inf)){
+        print("min should be finite, and max should be finite for a increasing exponential function!")
+        return(FALSE)
+      }
+      w=runif(nsamples)
+      res=log(exp(lamuda*min)+w*(exp(lamuda*max)-exp(lamuda*min)))/lamuda
+      print("This is probaly an exponential distribution!")
+      return(res)
+    }
+
+  }
+
+  if((!is.vector(xinit))|(length(xinit)<2)){
+    print("The starting points should be a vector with at least two elements WITHIN the Boundary!")
+    return(FALSE)
+  }
+  # if unbounded, the first derivative should be postive and the last should be negative.
+  if(((min==-Inf)&(fderiv(h, xinit[1], n = 1, method = "central")<=0))|((max==Inf)&(fderiv(h, tail(xinit,1), n = 1, method = "central")>=0))){
+    print("Please reset the starting pointing to make sure some are uphill and some are downhill! ")
+    return(FALSE)
+  }
+  # next step, continued as below
+  return(TRUE)
+}
 
 # perform the adaptive rejection sampling ----------------------------------------
 #' Adaptive Rejection Sampling
 #'
 #' Perform the adaptive rejection sampling from the specified log-concave density
 #'
-#' @param f A function of the density we want to sample from. Defaults to standard normal.
+#' @param f A function of the continuous density we want to sample from. Defaults to standard normal.
 #' @param nsamples The number of samples desired. Defaults to 100
 #' @param min The minimum of the domain of \code{f}. Defaults to -Inf.
 #' @param max The maximum of the domain of \code{f}. Defaults to Inf.
-#' @param xinit Starting points for which \code{f} is defined.
+#' @param xinit Vector of starting points for which \code{f} is defined (at least 2).
 #' @return A vector (of length \code{nsamples}) of sampled points from the specified distribution.
 #' @examples
 #' a <- ars(dnorm, nsamples = 100, min = -Inf, max = Inf, xinit = c(-1.5, -0.2, 0.5, 1))
@@ -116,8 +175,24 @@ update_step <- function(data, f, x_star, min, max) {
 #' @importFrom stats runif
 #' @importFrom stats dnorm
 #' @importFrom stats dchisq
+#' @importFrom assertthat assert_that
 #' @export
 ars <- function(f = dnorm, nsamples = 100, min = -Inf, max = Inf, xinit = c(-1.5, -0.2, 0.5, 1)) {
+  #check inputs nsamples, min, max, xinit
+  assert_that((nsamples>=0) && (min<max) && (is.vector(xinit))
+              &&(length(unique(xinit))>=2)  &&(is.function(f)))
+
+  xinit=sort(unique(xinit))
+  xinit=xinit[(xinit>min)&(xinit<max)]
+  res=check_dist(formulas=f, nsamples=nsamples, min=min, max=max, xinit=xinit)
+  if(is.numeric(res)){
+    return(res)
+  }
+  if(res==FALSE){
+    print("NO sampling result returned!")
+    return(NULL)
+  }
+  #need check xinit for unbounded cases
   data <- initial(formulas = f, min = min, max = max, xinit = xinit)
   nsam = 0
   result = rep(0, nsamples)
