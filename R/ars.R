@@ -159,7 +159,7 @@ check_dist<-function(formulas=dnorm, nsamples=100, min=-Inf, max=Inf, xinit=c(-1
 #'
 #' Perform the adaptive rejection sampling from the specified log-concave density
 #'
-#' @param f A function of the continuous density we want to sample from. Defaults to standard normal.
+#' @param f A function of the continuous, smooth density we want to sample from. Defaults to standard normal.
 #' @param nsamples The number of samples desired. Defaults to 100
 #' @param min The minimum of the domain of \code{f}. Defaults to -Inf.
 #' @param max The maximum of the domain of \code{f}. Defaults to Inf.

@@ -8,7 +8,7 @@ ars(f = dnorm, nsamples = 100, min = -Inf, max = Inf,
   xinit = c(-1.5, -0.2, 0.5, 1))
 }
 \arguments{
-\item{f}{A function of the continuous density we want to sample from. Defaults to standard normal.}
+\item{f}{A function of the continuous, smooth density we want to sample from. Defaults to standard normal.}
 
 \item{nsamples}{The number of samples desired. Defaults to 100}
 
