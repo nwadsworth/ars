@@ -105,7 +105,10 @@ check_dist<-function(formulas=dnorm, nsamples=100, min=-Inf, max=Inf, xinit=c(-1
   h<-function(x) return(log(formulas(x)))
   xinit=sort(unique(xinit))
   xinit=xinit[(xinit>min)&(xinit<max)]
-
+  if((!is.vector(xinit))|(length(xinit)<1)){
+    print("The starting points should be a vector with at least two elements WITHIN the Boundary!")
+    return(FALSE)
+  }
     #if ture, Non-Concative
   dd <-function(x) return(-fderiv(h,x, n=2, method = "central"))
   opt<-nlm(dd,tail(xinit,1))
@@ -145,10 +148,7 @@ check_dist<-function(formulas=dnorm, nsamples=100, min=-Inf, max=Inf, xinit=c(-1
     
   }
   
-  if((!is.vector(xinit))|(length(xinit)<2)){
-    print("The starting points should be a vector with at least two elements WITHIN the Boundary!")
-    return(FALSE)
-  }
+
       # if unbounded, the first derivative should be postive and the last should be negative.
   if(((min==-Inf)&(fderiv(h, xinit[1], n = 1, method = "central")<=0))|((max==Inf)&(fderiv(h, tail(xinit,1), n = 1, method = "central")>=0))){
     print("Please reset the starting pointing to make sure some are uphill and some are downhill! ")
@@ -198,11 +198,11 @@ ars <- function(formulas=dnorm, nsamples=100, min = -Inf, max = Inf, xinit=c(-1.
 }
 
 g<-function(x){
-  return(exp(-0.3*x))
+  return(exp(2*x))
 }
 
 system.time({
-  res=ars(formulas=g, nsamples=1000, min = 0, max = Inf, xinit=c(-1.4,0.2, 0.5, 3))
+  res=ars(formulas=g, nsamples=100000, min = 1, max = 4, xinit=c(-1.4,0.2, 0.5, 3))
 })
 
 hist(res,breaks = 60)
